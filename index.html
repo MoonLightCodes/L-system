@@ -1,15 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-System</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-direction: column;
+            height: 100vh;
+            text-align: center;
+        }
 
-  </head>
-  <body>
-    <main>
-    </main>
-    <script src="sketch.js"></script>
-  </body>
+        canvas {
+            border: 2px solid #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+
+        .generate-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .generate-button:hover {
+            background-color: #45a049;
+        }
+
+        .sentence-display {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            max-width: 90%;
+            text-align: center;
+            white-space: nowrap; /* Prevent wrapping */
+        }
+
+        @media screen and (max-width: 768px) {
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .generate-button {
+                width: 100%;
+            }
+
+            .sentence-display {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="lsystemCanvas"></canvas>
+    <button class="generate-button" id="generateButton">Generate</button>
+    <div class="sentence-display" id="sentenceDisplay">F</div>
+
+    <script>
+        const canvas = document.getElementById("lsystemCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // L-System rules
+        const rule1 = {
+            a: "F",
+            b: "FF+[+F-F-F]-[-F+F+F]",
+        };
+        const rule2 = {
+            a: "B",
+            b: "A",
+        };
+
+        let sentence = "F"; // Starting axiom
+        let newSentence = "";
+        let len = 100;
+        let angle = Math.PI / 6;
+        let maxGenerations = 10; // Max depth for recursion
+        let generationCount = 0; // To track how many generations have been created
+
+        // Set up canvas size based on window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = window.innerHeight * 0.6;
+        }
+
+        // Generate the next sentence based on L-System rules
+        function generate() {
+            if (generationCount >= maxGenerations) {
+                alert("Maximum generations reached!");
+                return;
+            }
+
+            newSentence = "";
+            for (let c of sentence) {
+                if (c === rule1.a) {
+                    newSentence += rule1.b;
+                } else if (c === rule2.a) {
+                    newSentence += rule2.b;
+                } else {
+                    newSentence += c;
+                }
+            }
+
+            sentence = newSentence;
+            len *= 0.6; // Reduce line length after each generation
+            generationCount++; // Increment generation count
+            document.getElementById("sentenceDisplay").textContent = sentence; // Update sentence display
+            draw(); // Redraw the L-System
+        }
+
+        // Draw the L-System on the canvas
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before each draw
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height); // Set origin to bottom center of the canvas
+
+            // Iterate through each character in the sentence
+            for (let c of sentence) {
+                if (c === "F") {
+                    // Set color based on line length
+                    if (len > 50) {
+                        ctx.strokeStyle = 'darkgreen';
+                    } else if (len > 20) {
+                        ctx.strokeStyle = 'forestgreen';
+                    } else {
+                        ctx.strokeStyle = 'red';
+                    }
+
+                    // Draw a line based on current length
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, -len);
+                    ctx.stroke();
+                    ctx.translate(0, -len); // Move the drawing position
+                } else if (c === "+") {
+                    ctx.rotate(angle); // Rotate clockwise
+                } else if (c === "-") {
+                    ctx.rotate(-angle); // Rotate counter-clockwise
+                } else if (c === "[") {
+                    ctx.save(); // Save the current state
+                } else if (c === "]") {
+                    ctx.restore(); // Restore the previous state
+                }
+            }
+
+            ctx.restore();
+        }
+
+        // Add event listener to the "Generate" button
+        document.getElementById("generateButton").addEventListener("click", generate);
+
+        // Initialize the canvas size and draw the first axiom
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas(); // Resize canvas initially
+        draw(); // Draw the initial axiom (starting state)
+
+    </script>
+</body>
 </html>
